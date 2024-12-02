@@ -85,7 +85,6 @@ void bfree(buffer_t *);
 int rand_bytes(void *, int);
 
 crypto_t *crypto_init(const char *, const char *, const char *);
-unsigned char *crypto_md5(const unsigned char *, size_t, unsigned char *);
 
 extern struct cache *nonce_cache;
 

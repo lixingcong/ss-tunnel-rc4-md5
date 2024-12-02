@@ -34,6 +34,7 @@
 #include <stdint.h>
 // #include "base64.h"
 #include "crypto.h"
+#include "crypto-xor.h"
 // #include "stream.h"
 // #include "aead.h"
 #include "utils.h"
@@ -118,33 +119,20 @@ crypto_init(const char *password, const char *key, const char *method)
 {
     entropy_check();
 
-    if (method != NULL) {
-		LOGI("Stream ciphers are insecure, therefore deprecated, and should be almost always avoided.");
-#ifdef XXXX // 2024年12月02日 16:59:48
-		cipher_t *cipher = stream_init(password, key, method);
-#else
-		cipher_t *cipher = 0;
-#endif
-		if (cipher == NULL)
-			return NULL;
-		crypto_t *crypto = (crypto_t *)ss_malloc(sizeof(crypto_t));
-#ifdef XXXX // 初始化套件 2024年12月02日 16:52:53
-		crypto_t tmp     = {
-		        .cipher      = cipher,
-		        .encrypt_all = &stream_encrypt_all,
-		        .decrypt_all = &stream_decrypt_all,
-		        .encrypt     = &stream_encrypt,
-		        .decrypt     = &stream_decrypt,
-		        .ctx_init    = &stream_ctx_init,
-		        .ctx_release = &stream_ctx_release,
-        };
-		memcpy(crypto, &tmp, sizeof(crypto_t));
-#endif
-		return crypto;
-	}
+	cipher_t *cipher = xor_init(password, NULL, method);
+	crypto_t *crypto = (crypto_t *)ss_malloc(sizeof(crypto_t));
+	crypto_t tmp     = {
+	    .cipher      = cipher,
+	    .encrypt_all = &xor_encrypt_all,
+	    .decrypt_all = &xor_decrypt_all,
+	    .encrypt     = &xor_encrypt,
+	    .decrypt     = &xor_decrypt,
+	    .ctx_init    = &xor_ctx_init,
+	    .ctx_release = &xor_ctx_release,
+	};
+	memcpy(crypto, &tmp, sizeof(crypto_t));
 
-    LOGE("invalid cipher name: %s", method);
-    return NULL;
+	return crypto;
 }
 
 
