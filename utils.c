@@ -261,7 +261,129 @@ int ss_is_ipv6addr(const char *addr)
 
 void usage()
 {
-	printf("shadowsocks-libev %s\n\n", "VERSION");
+	const char* VERSION = "xor-only version";
+
+	printf("\n");
+	printf("shadowsocks-libev %s\n\n", VERSION);
+	printf(
+	    "  maintained by Max Lv <max.c.lv@gmail.com> and Linus Yang <laokongzi@gmail.com>\n\n");
+	printf("  usage:\n\n");
+#ifdef MODULE_LOCAL
+	printf("    ss-local\n");
+#elif MODULE_REMOTE
+	printf("    ss-server\n");
+#elif MODULE_TUNNEL
+	printf("    ss-tunnel\n");
+#elif MODULE_REDIR
+	printf("    ss-redir\n");
+#elif MODULE_MANAGER
+	printf("    ss-manager\n");
+#endif
+	printf("\n");
+	printf(
+	    "       -s <server_host>           Host name or IP address of your remote server.\n");
+	printf(
+	    "       -p <server_port>           Port number of your remote server.\n");
+	printf(
+	    "       -l <local_port>            Port number of your local server.\n");
+	printf(
+	    "       -k <password>              Password of your remote server.\n");
+	printf(
+	    "       [-a <user>]                Run as another user.\n");
+	printf(
+	    "       [-f <pid_file>]            The file path to store pid.\n");
+	printf(
+	    "       [-t <timeout>]             Socket timeout in seconds.\n");
+#ifdef HAVE_SETRLIMIT
+	printf(
+	    "       [-n <number>]              Max number of open files.\n");
+#endif
+#ifndef MODULE_REDIR
+	printf(
+	    "       [-i <interface>]           Network interface to bind.\n");
+#endif
+	printf(
+	    "       [-b <local_address>]       Local address to bind.\n");
+	printf("\n");
+	printf(
+	    "       [-u]                       Enable UDP relay.\n");
+#ifdef MODULE_REDIR
+	printf(
+	    "                                  TPROXY is required in redir mode.\n");
+#endif
+	printf(
+	    "       [-U]                       Enable UDP relay and disable TCP relay.\n");
+#ifdef MODULE_REDIR
+	printf(
+	    "       [-T]                       Use tproxy instead of redirect (for tcp).\n");
+#endif
+#ifdef MODULE_REMOTE
+	printf(
+	    "       [-6]                       Resovle hostname to IPv6 address first.\n");
+#endif
+	printf("\n");
+#ifdef MODULE_TUNNEL
+	printf(
+	    "       [-L <addr>:<port>]         Destination server address and port\n");
+	printf(
+	    "                                  for local port forwarding.\n");
+#endif
+#ifdef MODULE_REMOTE
+	printf(
+	    "       [-d <addr>]                Name servers for internal DNS resolver.\n");
+#endif
+	printf(
+	    "       [--reuse-port]             Enable port reuse.\n");
+#if defined(MODULE_REMOTE) || defined(MODULE_LOCAL) || defined(MODULE_REDIR)
+	printf(
+	    "       [--fast-open]              Enable TCP fast open.\n");
+	printf(
+	    "                                  with Linux kernel > 3.7.0.\n");
+#endif
+	printf(
+	    "       [--tcp-incoming-sndbuf]    Size of the incoming connection TCP send buffer.\n");
+	printf(
+	    "       [--tcp-incoming-rcvbuf]    Size of the incoming connection TCP receive buffer.\n");
+	printf(
+	    "       [--tcp-outgoing-sndbuf]    Size of the outgoing connection TCP send buffer.\n");
+	printf(
+	    "       [--tcp-outgoing-rcvbuf]    Size of the outgoing connection TCP receive buffer.\n");
+#if defined(MODULE_REMOTE) || defined(MODULE_LOCAL)
+	printf(
+	    "       [--acl <acl_file>]         Path to ACL (Access Control List).\n");
+#endif
+#if defined(MODULE_REMOTE) || defined(MODULE_MANAGER)
+	printf(
+	    "       [--manager-address <addr>] UNIX domain socket address.\n");
+#endif
+#ifdef MODULE_MANAGER
+	printf(
+	    "       [--executable <path>]      Path to the executable of ss-server.\n");
+	printf(
+	    "       [-D <path>]                Path to the working directory of ss-manager.\n");
+#endif
+	printf(
+	    "       [--mtu <MTU>]              MTU of your network interface.\n");
+#ifdef __linux__
+	printf(
+	    "       [--mptcp]                  Enable Multipath TCP on MPTCP Kernel.\n");
+#ifdef USE_NFTABLES
+	printf(
+	    "       [--nftables-sets <sets>]   Add malicious IP into nftables sets.\n");
+	printf(
+	    "                                  sets spec: [<table1>:]<set1>[,[<table2>:]<set2>...]\n");
+#endif
+#endif
+#ifndef MODULE_MANAGER
+	printf(
+	    "       [--no-delay]               Enable TCP_NODELAY.\n");
+#endif
+	printf("\n");
+	printf(
+	    "       [-v]                       Verbose mode.\n");
+	printf(
+	    "       [-h, --help]               Print this message.\n");
+	printf("\n");
 }
 
 void daemonize(const char *path)
