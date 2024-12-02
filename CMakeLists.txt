@@ -9,6 +9,7 @@ add_executable(${DEMO_NAME}
     netutils.c
     udprelay.c
     common.c
+    cache.c
 )
 
 target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)

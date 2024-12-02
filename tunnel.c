@@ -53,9 +53,6 @@
 #endif
 #define CONNECT_IN_PROGRESS EAGAIN // EAGAIN: linux only
 
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#define max(a, b) (((a) > (b)) ? (a) : (b))
-
 // #include "netutils.h"
 #include "utils.h"
 // #include "plugin.h"
