@@ -32,7 +32,7 @@
 /* An arbitrary initial parameter */
 #define JHASH_INITVAL 0xdeadbeef
 
-static inline void xor_encrypt_impl(const void* in, void* out, size_t dataLen, const uint8_t* key, size_t keyLen)
+static inline void xor_impl(const void* in, void* out, size_t dataLen, const uint8_t* key, size_t keyLen)
 {
 	size_t               i    = 0;
 	const unsigned char* pIn  = in;
@@ -41,7 +41,12 @@ static inline void xor_encrypt_impl(const void* in, void* out, size_t dataLen, c
 		*(pOut++) = *(pIn++) ^ key[i % keyLen];
 }
 
-void xor_cipher_ctx_init(cipher_ctx_t *ctx, int method, int enc) {}
+static inline void xor_cipher_impl(const void* in, void* out, size_t dataLen, const cipher_ctx_t* ctx)
+{
+	const cipher_t* cipher = ctx->cipher;
+	xor_impl(in, out, dataLen, cipher->key, cipher->key_len);
+	xor_impl(out, out, dataLen, ctx->nonce, cipher->nonce_len);
+}
 
 void xor_ctx_release(cipher_ctx_t *cipher_ctx)
 {
@@ -67,8 +72,7 @@ int xor_encrypt_all(buffer_t *plaintext, cipher_t *cipher, size_t capacity)
 	ciphertext->len      = nonce_len + data_len;
 
 	memcpy(ciphertext->data, cipher_ctx.nonce, nonce_len);
-	xor_encrypt_impl(plaintext->data, ciphertext->data + nonce_len, data_len, cipher->key, cipher->key_len);
-
+	xor_cipher_impl(plaintext->data, ciphertext->data + nonce_len, data_len, &cipher_ctx);
 	xor_ctx_release(&cipher_ctx);
 
 	brealloc(plaintext, ciphertext->len, capacity);
@@ -85,6 +89,27 @@ int xor_encrypt(buffer_t *plaintext, cipher_ctx_t *cipher_ctx, size_t capacity)
 
 int xor_decrypt_all(buffer_t *ciphertext, cipher_t *cipher, size_t capacity)
 {
+	const size_t nonce_len = cipher->nonce_len;
+
+	if (ciphertext->len <= nonce_len)
+		return CRYPTO_ERROR;
+
+	cipher_ctx_t cipher_ctx;
+	xor_ctx_init(cipher, &cipher_ctx, 0);
+	memcpy(cipher_ctx.nonce, ciphertext->data, nonce_len);
+
+	static buffer_t tmp = { 0, 0, 0, NULL };
+	brealloc(&tmp, ciphertext->len, capacity);
+	buffer_t *plaintext = &tmp;
+	plaintext->len = ciphertext->len - nonce_len;
+
+	xor_cipher_impl(ciphertext->data + nonce_len, plaintext->data, plaintext->len, &cipher_ctx);
+	xor_ctx_release(&cipher_ctx);
+
+	brealloc(ciphertext, plaintext->len, capacity);
+	memcpy(ciphertext->data, plaintext->data, plaintext->len);
+	ciphertext->len = plaintext->len;
+
 	return CRYPTO_OK;
 }
 
