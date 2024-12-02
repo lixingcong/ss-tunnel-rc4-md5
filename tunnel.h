@@ -38,13 +38,6 @@
 
 #include "common.h"
 
-typedef struct buffer {
-	size_t idx;
-	size_t len;
-	size_t capacity;
-	char   *data;
-} buffer_t;
-
 typedef struct listen_ctx {
     ev_io io;
     ss_addr_t tunnel_addr;

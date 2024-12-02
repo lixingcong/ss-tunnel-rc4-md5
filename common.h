@@ -76,4 +76,23 @@ enum {
     GETOPT_VAL_NFTABLES_SETS
 };
 
+#define MAX_CONNECT_TIMEOUT 10
+#define MIN_UDP_TIMEOUT 10
+#define MAX_REMOTE_NUM 10
+
+/* Return a pointer to a @c struct, given a pointer to one of its fields. */
+#define cork_container_of(field, struct_type, field_name) ((struct_type *) (-offsetof(struct_type, field_name) + (void *) (field)))
+
+
+typedef struct buffer
+{
+	size_t idx;
+	size_t len;
+	size_t capacity;
+	char  *data;
+} buffer_t;
+
+int  balloc(buffer_t *ptr, size_t capacity);
+void bfree(buffer_t *ptr);
+
 #endif // _COMMON_H

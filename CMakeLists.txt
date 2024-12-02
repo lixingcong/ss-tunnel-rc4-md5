@@ -7,6 +7,8 @@ add_executable(${DEMO_NAME}
     tunnel.c
     utils.c
     netutils.c
+    udprelay.c
+    common.c
 )
 
 target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)

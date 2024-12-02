@@ -48,17 +48,10 @@
 #define SET_INTERFACE
 #endif
 
-/* Return a pointer to a @c struct, given a pointer to one of its
- * fields. */
-#define cork_container_of(field, struct_type, field_name) ((struct_type *) (-offsetof(struct_type, field_name) + (void *) (field)))
-
 #ifdef CONNECT_IN_PROGRESS
 #undef CONNECT_IN_PROGRESS
 #endif
 #define CONNECT_IN_PROGRESS EAGAIN // EAGAIN: linux only
-
-#define MAX_CONNECT_TIMEOUT 10
-#define MAX_REMOTE_NUM 10
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) > (b)) ? (a) : (b))
@@ -143,26 +136,6 @@ static int setnonblocking(int fd)
 }
 
 #endif
-
-static int balloc(buffer_t *ptr, size_t capacity)
-{
-	memset(ptr, 0, sizeof(buffer_t));
-	ptr->data     = ss_malloc(capacity);
-	ptr->capacity = capacity;
-	return capacity;
-}
-
-void bfree(buffer_t *ptr)
-{
-	if (ptr == NULL)
-		return;
-	ptr->idx      = 0;
-	ptr->len      = 0;
-	ptr->capacity = 0;
-	if (ptr->data != NULL) {
-		ss_free(ptr->data);
-	}
-}
 
 int create_and_bind(const char *addr, const char *port)
 {
