@@ -25,6 +25,7 @@
 #include "jhash.h"
 #include "utils.h"
 #include <string.h>
+//#include <assert.h>
 
 #define XOR_KEY_SIZE 32
 #define XOR_NONCE_SIZE 4
@@ -84,6 +85,32 @@ int xor_encrypt_all(buffer_t *plaintext, cipher_t *cipher, size_t capacity)
 
 int xor_encrypt(buffer_t *plaintext, cipher_ctx_t *cipher_ctx, size_t capacity)
 {
+	if (!cipher_ctx)
+		return CRYPTO_ERROR;
+
+	static buffer_t tmp = {0, 0, 0, NULL};
+
+	size_t nonce_len = 0;
+	if (!cipher_ctx->init) {
+		nonce_len = cipher_ctx->cipher->nonce_len;
+	}
+
+	const size_t data_len   = plaintext->len;
+	brealloc(&tmp, nonce_len + data_len, capacity);
+	buffer_t*    ciphertext = &tmp;
+	ciphertext->len         = nonce_len + data_len;
+
+	if (!cipher_ctx->init) {
+		memcpy(ciphertext->data, cipher_ctx->nonce, nonce_len);
+		cipher_ctx->init    = 1;
+	}
+
+	xor_cipher_impl(plaintext->data, ciphertext->data + nonce_len, data_len, cipher_ctx);
+
+	brealloc(plaintext, ciphertext->len, capacity);
+	memcpy(plaintext->data, ciphertext->data, ciphertext->len);
+	plaintext->len = ciphertext->len;
+
 	return CRYPTO_OK;
 }
 
@@ -115,6 +142,49 @@ int xor_decrypt_all(buffer_t *ciphertext, cipher_t *cipher, size_t capacity)
 
 int xor_decrypt(buffer_t *ciphertext, cipher_ctx_t *cipher_ctx, size_t capacity)
 {
+	if (!cipher_ctx)
+		return CRYPTO_ERROR;
+
+	cipher_t* cipher = cipher_ctx->cipher;
+
+	static buffer_t tmp = {0, 0, 0, NULL};
+	brealloc(&tmp, ciphertext->len, capacity);
+	buffer_t* plaintext = &tmp;
+	plaintext->len      = ciphertext->len;
+
+	if (!cipher_ctx->init) {
+		if (!cipher_ctx->chunk) {
+			cipher_ctx->chunk = (buffer_t*) ss_malloc(sizeof(buffer_t));
+			memset(cipher_ctx->chunk, 0, sizeof(buffer_t));
+			balloc(cipher_ctx->chunk, cipher->nonce_len);
+		}
+
+		const size_t left_len = min(cipher->nonce_len - cipher_ctx->chunk->len, ciphertext->len);
+		if (left_len > 0) {
+			memcpy(cipher_ctx->chunk->data + cipher_ctx->chunk->len, ciphertext->data, left_len);
+			memmove(ciphertext->data, ciphertext->data + left_len, ciphertext->len - left_len);
+			cipher_ctx->chunk->len += left_len;
+			ciphertext->len -= left_len;
+		}
+
+		if (cipher_ctx->chunk->len < cipher->nonce_len)
+			return CRYPTO_NEED_MORE;
+
+		plaintext->len -= left_len;
+
+		memcpy(cipher_ctx->nonce, cipher_ctx->chunk->data, cipher->nonce_len);
+		cipher_ctx->init = 1;
+	}
+
+	if (ciphertext->len <= 0)
+		return CRYPTO_NEED_MORE;
+
+	xor_cipher_impl(ciphertext->data, plaintext->data, ciphertext->len, cipher_ctx);
+
+	brealloc(ciphertext, plaintext->len, capacity);
+	memcpy(ciphertext->data, plaintext->data, plaintext->len);
+	ciphertext->len = plaintext->len;
+
 	return CRYPTO_OK;
 }
 
