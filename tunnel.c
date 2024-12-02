@@ -51,7 +51,7 @@
 #ifdef CONNECT_IN_PROGRESS
 #undef CONNECT_IN_PROGRESS
 #endif
-#define CONNECT_IN_PROGRESS EAGAIN // EAGAIN: linux only
+#define CONNECT_IN_PROGRESS EINPROGRESS // EINPROGRESS: linux only
 
 // #include "netutils.h"
 #include "utils.h"
