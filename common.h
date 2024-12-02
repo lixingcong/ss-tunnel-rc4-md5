@@ -30,8 +30,10 @@
 #define MODULE_LOCAL
 #endif
 
-#include "netutils.h"
 #include "crypto.h"
+#ifdef MODULE_TUNNEL
+#include "netutils.h"
+#endif
 
 int init_udprelay(const char *server_host, const char *server_port,
 #ifdef MODULE_LOCAL

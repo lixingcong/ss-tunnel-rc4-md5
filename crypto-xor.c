@@ -212,7 +212,7 @@ cipher_t* xor_init(const char* pass, const char* /*key*/, const char* /*method*/
 	{
 		// init the xor key
 		uint32_t       loopCount      = cipher->key_len / sizeof(uint32_t);
-		uint32_t*      pOut32         = cipher->key;
+		uint32_t*      pOut32         = (uint32_t*)&cipher->key[0];
 		uint32_t       hashVal        = JHASH_INITVAL;
 		const uint32_t passwordLength = min(strlen(pass), cipher->key_len);
 
