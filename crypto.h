@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -52,11 +53,8 @@ typedef struct buffer {
 } buffer_t;
 
 typedef struct {
-    int method;
-    int skey;
     size_t nonce_len;
     size_t key_len;
-    size_t tag_len;
     uint8_t key[MAX_KEY_LENGTH];
 } cipher_t;
 
@@ -65,8 +63,6 @@ typedef struct {
     uint64_t counter;
     cipher_t *cipher;
     buffer_t *chunk;
-    uint8_t salt[MAX_KEY_LENGTH];
-    uint8_t skey[MAX_KEY_LENGTH];
     uint8_t nonce[MAX_NONCE_LENGTH];
 } cipher_ctx_t;
 
