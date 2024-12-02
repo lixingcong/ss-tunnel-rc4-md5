@@ -812,11 +812,8 @@ remote_recv_cb(EV_P_ ev_io *w, int revents)
     buf->len = r;
 
 #ifdef MODULE_LOCAL
-#ifdef XXXX // 解密 2024年12月02日 13:59:32
     int err = server_ctx->crypto->decrypt_all(buf, server_ctx->crypto->cipher, buf_size);
-#else
-	int err = 0;
-#endif
+
     if (err) {
         LOGE("failed to handshake with %s: %s",
                 get_addr_str((struct sockaddr *)&src_addr, false), "suspicious UDP packet");
@@ -1315,11 +1312,7 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
         memmove(buf->data, buf->data + offset, buf->len);
     }
 
-#ifdef XXXX // 加密 2024年12月02日 14:01:45
     int err = server_ctx->crypto->encrypt_all(buf, server_ctx->crypto->cipher, buf_size);
-#else
-	int err = 0;
-#endif
 
     if (err) {
         // drop the packet silently
@@ -1462,7 +1455,7 @@ init_udprelay(const char *server_host, const char *server_port,
               const ss_addr_t tunnel_addr,
 #endif
 #endif
-              int mtu, int timeout, const char *iface)
+              int mtu, crypto_t* crypto, int timeout, const char *iface)
 {
     s_port = server_port;
     // Initialize ev loop
@@ -1493,9 +1486,7 @@ init_udprelay(const char *server_host, const char *server_port,
     server_ctx->loop = loop;
 #endif
     server_ctx->timeout    = max(timeout, MIN_UDP_TIMEOUT);
-#ifdef XXXX // 2024年12月02日 14:02:42
     server_ctx->crypto     = crypto;
-#endif
     server_ctx->iface      = iface;
     server_ctx->conn_cache = conn_cache;
 #ifdef MODULE_LOCAL

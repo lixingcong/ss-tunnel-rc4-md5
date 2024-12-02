@@ -8,7 +8,6 @@ add_executable(${DEMO_NAME}
     utils.c
     netutils.c
     udprelay.c
-    common.c
     cache.c
     cork2.c
     crypto.c

@@ -36,6 +36,7 @@
 #endif
 
 #include "common.h"
+#include "crypto.h"
 
 #define MAX_UDP_PACKET_SIZE (65507)
 
@@ -46,9 +47,7 @@
 typedef struct server_ctx {
     ev_io io;
     int fd;
-#ifdef XXXX // 2024年12月02日 13:55:18
     crypto_t *crypto;
-#endif
     int timeout;
     const char *iface;
     struct cache *conn_cache;

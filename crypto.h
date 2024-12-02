@@ -66,7 +66,7 @@ typedef struct {
     uint8_t nonce[MAX_NONCE_LENGTH];
 } cipher_ctx_t;
 
-typedef struct crypto {
+typedef struct {
     cipher_t *cipher;
 
     int(*const encrypt_all) (buffer_t *, cipher_t *, size_t);

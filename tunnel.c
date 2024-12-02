@@ -96,9 +96,7 @@ int tcp_incoming_rcvbuf = 0;
 int tcp_outgoing_sndbuf = 0;
 int tcp_outgoing_rcvbuf = 0;
 
-#ifdef XXXX // 2024年12月02日 13:22:08
 static crypto_t *crypto;
-#endif
 
 static int ipv6first = 0;
 static int mode      = TCP_ONLY;
@@ -226,11 +224,7 @@ static void server_recv_cb(EV_P_ ev_io *w, int revents)
 
 	remote->buf->len = r;
 
-#ifdef XXXX // 加密 2024年12月02日 13:24:43
 	int err = crypto->encrypt(remote->buf, server->e_ctx, SOCKET_BUF_SIZE);
-#else
-	int err = 0;
-#endif
 
 	if (err) {
 		LOGE("invalid password or cipher");
@@ -349,7 +343,6 @@ static void remote_recv_cb(EV_P_ ev_io *w, int revents)
 
 	server->buf->len = r;
 
-#ifdef XXXX // 解密 2024年12月02日 13:32:14
 	int err = crypto->decrypt(server->buf, server->d_ctx, SOCKET_BUF_SIZE);
 
 	if (err == CRYPTO_ERROR) {
@@ -360,7 +353,6 @@ static void remote_recv_cb(EV_P_ ev_io *w, int revents)
 	} else if (err == CRYPTO_NEED_MORE) {
 		return; // Wait for more
 	}
-#endif
 
 	int s = send(server->fd, server->buf->data, server->buf->len, 0);
 
@@ -459,11 +451,7 @@ static void remote_send_cb(EV_P_ ev_io *w, int revents)
 			memcpy(abuf->data + abuf->len, &port, 2);
 			abuf->len += 2;
 
-#ifdef XXXX // 加密 2024年12月02日 13:35:07
 			int err = crypto->encrypt(abuf, server->e_ctx, SOCKET_BUF_SIZE);
-#else
-			int err = 0;
-#endif
 
 			if (err) {
 				LOGE("invalid password or cipher");
@@ -668,12 +656,10 @@ static server_t *new_server(int fd)
 	server->send_ctx->server    = server;
 	server->send_ctx->connected = 0;
 
-#ifdef XXXX // 2024年12月02日 13:39:33
 	server->e_ctx = ss_malloc(sizeof(cipher_ctx_t));
 	server->d_ctx = ss_malloc(sizeof(cipher_ctx_t));
 	crypto->ctx_init(crypto->cipher, server->e_ctx, 1);
 	crypto->ctx_init(crypto->cipher, server->d_ctx, 0);
-#endif
 
 	ev_io_init(&server->recv_ctx->io, server_recv_cb, fd, EV_READ);
 	ev_io_init(&server->send_ctx->io, server_send_cb, fd, EV_WRITE);
@@ -686,7 +672,7 @@ static void free_server(server_t *server)
 	if (server->remote != NULL) {
 		server->remote->server = NULL;
 	}
-#ifdef XXXX // 2024年12月02日 13:39:43
+
 	if (server->e_ctx != NULL) {
 		crypto->ctx_release(server->e_ctx);
 		ss_free(server->e_ctx);
@@ -695,7 +681,7 @@ static void free_server(server_t *server)
 		crypto->ctx_release(server->d_ctx);
 		ss_free(server->d_ctx);
 	}
-#endif
+
 	if (server->buf != NULL) {
 		bfree(server->buf);
 		ss_free(server->buf);
@@ -1190,11 +1176,9 @@ int main(int argc, char **argv)
 
 	// Setup keys
 	LOGI("initializing ciphers... %s", method);
-#ifdef XXXX // 2024年12月02日 13:41:52
 	crypto = crypto_init(password, key, method);
 	if (crypto == NULL)
 		FATAL("failed to initialize ciphers");
-#endif
 
 	// Setup proxy context
 	struct listen_ctx listen_ctx;
@@ -1250,7 +1234,7 @@ int main(int argc, char **argv)
 			FATAL("failed to resolve the provided hostname");
 		}
 		struct sockaddr *addr = (struct sockaddr *) storage;
-		init_udprelay(local_addr, local_port, addr, get_sockaddr_len(addr), tunnel_addr, mtu, listen_ctx.timeout, iface);
+		init_udprelay(local_addr, local_port, addr, get_sockaddr_len(addr), tunnel_addr, mtu, crypto, listen_ctx.timeout, iface);
 	}
 
 	if (mode == UDP_ONLY) {

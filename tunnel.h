@@ -59,10 +59,8 @@ typedef struct server {
     int fd;
 
     buffer_t *buf;
-#ifdef XXXX // 2024年12月02日 13:21:44
     cipher_ctx_t *e_ctx;
     cipher_ctx_t *d_ctx;
-#endif
     struct server_ctx *recv_ctx;
     struct server_ctx *send_ctx;
     struct remote *remote;
