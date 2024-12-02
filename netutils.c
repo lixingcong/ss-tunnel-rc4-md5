@@ -22,8 +22,6 @@
 
 #include <math.h>
 
-// #include <libcork/core.h>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -47,6 +45,8 @@
 #ifndef SO_REUSEPORT
 #define SO_REUSEPORT 15
 #endif
+
+#include "cork2.h"
 
 extern int verbose;
 
@@ -83,28 +83,22 @@ int setinterface(int socket_fd, const char *interface_name)
 int parse_local_addr(struct sockaddr_storage *storage_v4, struct sockaddr_storage *storage_v6, const char *host)
 {
 	if (host != NULL) {
-#ifdef XXXX // 2024年12月02日 13:17:30
-		struct cork_ip ip;
-		if (cork_ip_init(&ip, host) != -1) {
-			if (ip.version == 4) {
-				memset(storage_v4, 0, sizeof(struct sockaddr_storage));
-				struct sockaddr_in *addr = (struct sockaddr_in *) storage_v4;
-				inet_pton(AF_INET, host, &addr->sin_addr);
-				addr->sin_family = AF_INET;
-				LOGI("binding to outbound IPv4 addr: %s", host);
-				return AF_INET;
-			} else if (ip.version == 6) {
-				memset(storage_v6, 0, sizeof(struct sockaddr_storage));
-				struct sockaddr_in6 *addr = (struct sockaddr_in6 *) storage_v6;
-				inet_pton(AF_INET6, host, &addr->sin6_addr);
-				addr->sin6_family = AF_INET6;
-				LOGI("binding to outbound IPv6 addr: %s", host);
-				return AF_INET6;
-			}
+		const int ip_version = cork_check_ip_version(host);
+		if (ip_version == 4) {
+			memset(storage_v4, 0, sizeof(struct sockaddr_storage));
+			struct sockaddr_in *addr = (struct sockaddr_in *) storage_v4;
+			inet_pton(AF_INET, host, &addr->sin_addr);
+			addr->sin_family = AF_INET;
+			LOGI("binding to outbound IPv4 addr: %s", host);
+			return AF_INET;
+		} else if (ip_version == 6) {
+			memset(storage_v6, 0, sizeof(struct sockaddr_storage));
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *) storage_v6;
+			inet_pton(AF_INET6, host, &addr->sin6_addr);
+			addr->sin6_family = AF_INET6;
+			LOGI("binding to outbound IPv6 addr: %s", host);
+			return AF_INET6;
 		}
-#else
-		return AF_INET;
-#endif
 	}
 	return 0;
 }
@@ -121,17 +115,16 @@ int bind_to_addr(struct sockaddr_storage *storage, int socket_fd)
 
 ssize_t get_sockaddr(char *host, char *port, struct sockaddr_storage *storage, int block, int ipv6first)
 {
-#ifdef XXXX // 2024年12月02日 13:18:43
-	struct cork_ip ip;
-	if (cork_ip_init(&ip, host) != -1) {
-		if (ip.version == 4) {
+	const int ip_version = cork_check_ip_version(host);
+	if (ip_version != -1) {
+		if (ip_version == 4) {
 			struct sockaddr_in *addr = (struct sockaddr_in *) storage;
 			addr->sin_family         = AF_INET;
 			inet_pton(AF_INET, host, &(addr->sin_addr));
 			if (port != NULL) {
 				addr->sin_port = htons(atoi(port));
 			}
-		} else if (ip.version == 6) {
+		} else if (ip_version == 6) {
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *) storage;
 			addr->sin6_family         = AF_INET6;
 			inet_pton(AF_INET6, host, &(addr->sin6_addr));
@@ -140,9 +133,7 @@ ssize_t get_sockaddr(char *host, char *port, struct sockaddr_storage *storage, i
 			}
 		}
 		return 0;
-	} else
-#endif
-	{
+	} else {
 #ifdef __ANDROID__
 		extern int vpn;
 		assert(!vpn); // protecting DNS packets isn't supported yet

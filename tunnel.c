@@ -416,10 +416,9 @@ static void remote_send_cb(EV_P_ ev_io *w, int revents)
 			buffer_t *abuf = remote->buf;
 
 			ss_addr_t *sa = &server->destaddr;
-#ifdef XXXX // 2024年12月02日 13:34:13
-			struct cork_ip ip;
-			if (cork_ip_init(&ip, sa->host) != -1) {
-				if (ip.version == 4) {
+			const int  ip_version = cork_check_ip_version(sa->host);
+			if (ip_version != -1) {
+				if (ip_version == 4) {
 					// send as IPv4
 					struct in_addr host;
 					memset(&host, 0, sizeof(struct in_addr));
@@ -431,7 +430,7 @@ static void remote_send_cb(EV_P_ ev_io *w, int revents)
 					abuf->data[abuf->len++] = 1;
 					memcpy(abuf->data + abuf->len, &host, host_len);
 					abuf->len += host_len;
-				} else if (ip.version == 6) {
+				} else if (ip_version == 6) {
 					// send as IPv6
 					struct in6_addr host;
 					memset(&host, 0, sizeof(struct in6_addr));
@@ -446,20 +445,6 @@ static void remote_send_cb(EV_P_ ev_io *w, int revents)
 				} else {
 					FATAL("IP parser error");
 				}
-#else
-			if (1) {
-				// send as IPv4
-				struct in_addr host;
-				memset(&host, 0, sizeof(struct in_addr));
-				int host_len = sizeof(struct in_addr);
-
-				if (inet_pton(AF_INET, sa->host, &host) == -1) {
-					FATAL("IP parser error");
-				}
-				abuf->data[abuf->len++] = 1;
-				memcpy(abuf->data + abuf->len, &host, host_len);
-				abuf->len += host_len;
-#endif
 			} else {
 				// send as domain
 				int host_len = strlen(sa->host);

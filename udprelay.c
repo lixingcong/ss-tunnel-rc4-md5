@@ -46,10 +46,6 @@
 #define SET_INTERFACE
 #endif
 
-#ifdef XXXX // 2024年12月02日 13:54:18
-#include <libcork/core.h>
-#endif
-
 #include "utils.h"
 #include "netutils.h"
 #include "udprelay.h"
@@ -285,28 +281,18 @@ parse_udprelay_header(const char *buf, const size_t buf_len,
             if (storage != NULL) {
                 char tmp[MAX_HOSTNAME_LEN] = { 0 };
 				memcpy(tmp, buf + offset + 1, name_len);
-#ifdef XXXX // 2024年12月02日 13:56:21
-                struct cork_ip ip;
-                if (cork_ip_init(&ip, tmp) != -1) {
-                    if (ip.version == 4) {
-                        struct sockaddr_in *addr = (struct sockaddr_in *)storage;
-                        inet_pton(AF_INET, tmp, &(addr->sin_addr));
-                        memcpy(&addr->sin_port, buf + offset + 1 + name_len, sizeof(uint16_t));
-                        addr->sin_family = AF_INET;
-                    } else if (ip.version == 6) {
-                        struct sockaddr_in6 *addr = (struct sockaddr_in6 *)storage;
-                        inet_pton(AF_INET, tmp, &(addr->sin6_addr));
-                        memcpy(&addr->sin6_port, buf + offset + 1 + name_len, sizeof(uint16_t));
-                        addr->sin6_family = AF_INET6;
-                    }
-                }
-#else
-				// ipv4
-				struct sockaddr_in *addr = (struct sockaddr_in *) storage;
-				inet_pton(AF_INET, tmp, &(addr->sin_addr));
-				memcpy(&addr->sin_port, buf + offset + 1 + name_len, sizeof(uint16_t));
-				addr->sin_family = AF_INET;
-#endif
+				const int ip_version = cork_check_ip_version(tmp);
+				if (ip_version == 4) {
+					struct sockaddr_in *addr = (struct sockaddr_in *)storage;
+					inet_pton(AF_INET, tmp, &(addr->sin_addr));
+					memcpy(&addr->sin_port, buf + offset + 1 + name_len, sizeof(uint16_t));
+					addr->sin_family = AF_INET;
+				} else if (ip_version == 6) {
+					struct sockaddr_in6 *addr = (struct sockaddr_in6 *)storage;
+					inet_pton(AF_INET, tmp, &(addr->sin6_addr));
+					memcpy(&addr->sin6_port, buf + offset + 1 + name_len, sizeof(uint16_t));
+					addr->sin6_family = AF_INET6;
+				}
             }
             if (host != NULL) {
                 memcpy(host, buf + offset + 1, name_len);
@@ -1146,10 +1132,9 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
     uint16_t port_net_num                  = htons(port_num);
     int addr_header_len                    = 0;
 
-#ifdef XXXX // 2024年12月02日 14:00:17
-    struct cork_ip ip;
-    if (cork_ip_init(&ip, host) != -1) {
-        if (ip.version == 4) {
+	const int ip_version = cork_check_ip_version(host);
+    if (ip_version != -1) {
+        if (ip_version == 4) {
             // send as IPv4
             struct in_addr host_addr;
             memset(&host_addr, 0, sizeof(struct in_addr));
@@ -1161,7 +1146,7 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
             addr_header[addr_header_len++] = 1;
             memcpy(addr_header + addr_header_len, &host_addr, host_len);
             addr_header_len += host_len;
-        } else if (ip.version == 6) {
+        } else if (ip_version == 6) {
             // send as IPv6
             struct in6_addr host_addr;
             memset(&host_addr, 0, sizeof(struct in6_addr));
@@ -1176,20 +1161,6 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
         } else {
             FATAL("IP parser error");
         }
-#else
-	if (1) {
-		// send as IPv4
-		struct in_addr host_addr;
-		memset(&host_addr, 0, sizeof(struct in_addr));
-		int host_len = sizeof(struct in_addr);
-
-		if (inet_pton(AF_INET, host, &host_addr) == -1) {
-			FATAL("IP parser error");
-		}
-		addr_header[addr_header_len++] = 1;
-		memcpy(addr_header + addr_header_len, &host_addr, host_len);
-		addr_header_len += host_len;
-#endif
     } else {
         // send as domain
         int host_len = strlen(host);
