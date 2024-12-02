@@ -50,10 +50,7 @@
 #include "netutils.h"
 #include "udprelay.h"
 #include "cork2.h"
-
-#define ADDRTYPE_MASK 0xF
-
-//#include "winsock.h"
+#include "crypto.h"
 
 #ifdef MODULE_REMOTE
 #define MAX_UDP_CONN_NUM 512

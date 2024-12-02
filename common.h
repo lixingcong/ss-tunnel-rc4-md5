@@ -80,22 +80,8 @@ enum {
 #define MIN_UDP_TIMEOUT 10
 #define MAX_REMOTE_NUM 10
 
-
-typedef struct buffer
-{
-	size_t idx;
-	size_t len;
-	size_t capacity;
-	char  *data;
-} buffer_t;
-
-int  balloc(buffer_t *ptr, size_t capacity);
-void bfree(buffer_t *ptr);
-int  brealloc(buffer_t *ptr, size_t len, size_t capacity);
-
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) > (b)) ? (a) : (b))
-
 
 
 #endif // _COMMON_H

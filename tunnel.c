@@ -55,7 +55,7 @@
 
 // #include "netutils.h"
 #include "utils.h"
-// #include "plugin.h"
+#include "crypto.h"
 #include "tunnel.h"
 #include "cork2.h"
 #include <string.h>

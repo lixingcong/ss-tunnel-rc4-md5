@@ -33,7 +33,7 @@
 #include "winsock.h"
 #endif
 
-// #include "crypto.h"
+#include "crypto.h"
 // #include "jconf.h"
 
 #include "common.h"

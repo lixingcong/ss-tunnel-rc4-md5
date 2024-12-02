@@ -11,6 +11,7 @@ add_executable(${DEMO_NAME}
     common.c
     cache.c
     cork2.c
+    crypto.c
 )
 
 target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)
