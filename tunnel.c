@@ -57,6 +57,7 @@
 #include "utils.h"
 // #include "plugin.h"
 #include "tunnel.h"
+#include "cork2.h"
 #include <string.h>
 #ifdef WIN32
 #include "winsock.h"

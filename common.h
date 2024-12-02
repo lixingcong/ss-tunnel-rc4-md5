@@ -80,9 +80,6 @@ enum {
 #define MIN_UDP_TIMEOUT 10
 #define MAX_REMOTE_NUM 10
 
-/* Return a pointer to a @c struct, given a pointer to one of its fields. */
-#define cork_container_of(field, struct_type, field_name) ((struct_type *) (-offsetof(struct_type, field_name) + (void *) (field)))
-
 
 typedef struct buffer
 {

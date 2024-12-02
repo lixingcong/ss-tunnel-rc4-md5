@@ -52,10 +52,8 @@
 
 #include "utils.h"
 #include "netutils.h"
-#ifdef XXXX // 2024年12月02日 13:54:52
-#include "cache.h"
-#endif
 #include "udprelay.h"
+#include "cork2.h"
 
 #define ADDRTYPE_MASK 0xF
 

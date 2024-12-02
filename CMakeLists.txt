@@ -10,6 +10,7 @@ add_executable(${DEMO_NAME}
     udprelay.c
     common.c
     cache.c
+    cork2.c
 )
 
 target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)
