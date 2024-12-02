@@ -50,273 +50,299 @@
 
 extern int verbose;
 
-static const char valid_label_bytes[] =
-    "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+static const char valid_label_bytes[] = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
-int
-set_reuseport(int socket)
+int set_reuseport(int socket)
 {
-    int opt = 1;
-    return setsockopt(socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+	int opt = 1;
+	return setsockopt(socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 }
 
-size_t
-get_sockaddr_len(struct sockaddr *addr)
+size_t get_sockaddr_len(struct sockaddr *addr)
 {
-    if (addr->sa_family == AF_INET) {
-        return sizeof(struct sockaddr_in);
-    } else if (addr->sa_family == AF_INET6) {
-        return sizeof(struct sockaddr_in6);
-    }
-    return 0;
+	if (addr->sa_family == AF_INET) {
+		return sizeof(struct sockaddr_in);
+	} else if (addr->sa_family == AF_INET6) {
+		return sizeof(struct sockaddr_in6);
+	}
+	return 0;
 }
 
 #ifdef SET_INTERFACE
-int
-setinterface(int socket_fd, const char *interface_name)
+int setinterface(int socket_fd, const char *interface_name)
 {
-    struct ifreq interface;
-    memset(&interface, 0, sizeof(struct ifreq));
-    strncpy(interface.ifr_name, interface_name, IFNAMSIZ - 1);
-    int res = setsockopt(socket_fd, SOL_SOCKET, SO_BINDTODEVICE, &interface,
-                         sizeof(struct ifreq));
-    return res;
+	struct ifreq interface;
+	memset(&interface, 0, sizeof(struct ifreq));
+	strncpy(interface.ifr_name, interface_name, IFNAMSIZ - 1);
+	int res = setsockopt(socket_fd, SOL_SOCKET, SO_BINDTODEVICE, &interface, sizeof(struct ifreq));
+	return res;
 }
 
 #endif
 
-int
-parse_local_addr(struct sockaddr_storage *storage_v4,
-                 struct sockaddr_storage *storage_v6,
-                 const char *host)
+int parse_local_addr(struct sockaddr_storage *storage_v4, struct sockaddr_storage *storage_v6, const char *host)
 {
-    if (host != NULL) {
+	if (host != NULL) {
 #ifdef XXXX // 2024年12月02日 13:17:30
-        struct cork_ip ip;
-        if (cork_ip_init(&ip, host) != -1) {
-            if (ip.version == 4) {
-                memset(storage_v4, 0, sizeof(struct sockaddr_storage));
-                struct sockaddr_in *addr = (struct sockaddr_in *)storage_v4;
-                inet_pton(AF_INET, host, &addr->sin_addr);
-                addr->sin_family = AF_INET;
-                LOGI("binding to outbound IPv4 addr: %s", host);
-                return AF_INET;
-            } else if (ip.version == 6) {
-                memset(storage_v6, 0, sizeof(struct sockaddr_storage));
-                struct sockaddr_in6 *addr = (struct sockaddr_in6 *)storage_v6;
-                inet_pton(AF_INET6, host, &addr->sin6_addr);
-                addr->sin6_family = AF_INET6;
-                LOGI("binding to outbound IPv6 addr: %s", host);
-                return AF_INET6;
-            }
-        }
+		struct cork_ip ip;
+		if (cork_ip_init(&ip, host) != -1) {
+			if (ip.version == 4) {
+				memset(storage_v4, 0, sizeof(struct sockaddr_storage));
+				struct sockaddr_in *addr = (struct sockaddr_in *) storage_v4;
+				inet_pton(AF_INET, host, &addr->sin_addr);
+				addr->sin_family = AF_INET;
+				LOGI("binding to outbound IPv4 addr: %s", host);
+				return AF_INET;
+			} else if (ip.version == 6) {
+				memset(storage_v6, 0, sizeof(struct sockaddr_storage));
+				struct sockaddr_in6 *addr = (struct sockaddr_in6 *) storage_v6;
+				inet_pton(AF_INET6, host, &addr->sin6_addr);
+				addr->sin6_family = AF_INET6;
+				LOGI("binding to outbound IPv6 addr: %s", host);
+				return AF_INET6;
+			}
+		}
 #else
 		return AF_INET;
 #endif
-    }
-    return 0;
+	}
+	return 0;
 }
 
-int
-bind_to_addr(struct sockaddr_storage *storage,
-             int socket_fd)
+int bind_to_addr(struct sockaddr_storage *storage, int socket_fd)
 {
-    if (storage->ss_family == AF_INET) {
-        return bind(socket_fd, (struct sockaddr *)storage, sizeof(struct sockaddr_in));
-    } else if (storage->ss_family == AF_INET6) {
-        return bind(socket_fd, (struct sockaddr *)storage, sizeof(struct sockaddr_in6));
-    }
-    return -1;
+	if (storage->ss_family == AF_INET) {
+		return bind(socket_fd, (struct sockaddr *) storage, sizeof(struct sockaddr_in));
+	} else if (storage->ss_family == AF_INET6) {
+		return bind(socket_fd, (struct sockaddr *) storage, sizeof(struct sockaddr_in6));
+	}
+	return -1;
 }
 
-ssize_t
-get_sockaddr(char *host, char *port,
-             struct sockaddr_storage *storage, int block,
-             int ipv6first)
+ssize_t get_sockaddr(char *host, char *port, struct sockaddr_storage *storage, int block, int ipv6first)
 {
 #ifdef XXXX // 2024年12月02日 13:18:43
-    struct cork_ip ip;
-    if (cork_ip_init(&ip, host) != -1) {
-        if (ip.version == 4) {
-            struct sockaddr_in *addr = (struct sockaddr_in *)storage;
-            addr->sin_family = AF_INET;
-            inet_pton(AF_INET, host, &(addr->sin_addr));
-            if (port != NULL) {
-                addr->sin_port = htons(atoi(port));
-            }
-        } else if (ip.version == 6) {
-            struct sockaddr_in6 *addr = (struct sockaddr_in6 *)storage;
-            addr->sin6_family = AF_INET6;
-            inet_pton(AF_INET6, host, &(addr->sin6_addr));
-            if (port != NULL) {
-                addr->sin6_port = htons(atoi(port));
-            }
-        }
-        return 0;
-    } else
+	struct cork_ip ip;
+	if (cork_ip_init(&ip, host) != -1) {
+		if (ip.version == 4) {
+			struct sockaddr_in *addr = (struct sockaddr_in *) storage;
+			addr->sin_family         = AF_INET;
+			inet_pton(AF_INET, host, &(addr->sin_addr));
+			if (port != NULL) {
+				addr->sin_port = htons(atoi(port));
+			}
+		} else if (ip.version == 6) {
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *) storage;
+			addr->sin6_family         = AF_INET6;
+			inet_pton(AF_INET6, host, &(addr->sin6_addr));
+			if (port != NULL) {
+				addr->sin6_port = htons(atoi(port));
+			}
+		}
+		return 0;
+	} else
 #endif
 	{
 #ifdef __ANDROID__
-        extern int vpn;
-        assert(!vpn);   // protecting DNS packets isn't supported yet
+		extern int vpn;
+		assert(!vpn); // protecting DNS packets isn't supported yet
 #endif
-        struct addrinfo hints;
-        struct addrinfo *result, *rp;
+		struct addrinfo  hints;
+		struct addrinfo *result, *rp;
 
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family   = AF_UNSPEC;   /* Return IPv4 and IPv6 choices */
-        hints.ai_socktype = SOCK_STREAM; /* We want a TCP socket */
+		memset(&hints, 0, sizeof(struct addrinfo));
+		hints.ai_family   = AF_UNSPEC;   /* Return IPv4 and IPv6 choices */
+		hints.ai_socktype = SOCK_STREAM; /* We want a TCP socket */
 
-        int err = getaddrinfo(host, port, &hints, &result);
+		int err = getaddrinfo(host, port, &hints, &result);
 
-        if (err != 0) {
-            LOGE("getaddrinfo: %s", gai_strerror(err));
-            return -1;
-        }
+		if (err != 0) {
+			LOGE("getaddrinfo: %s", gai_strerror(err));
+			return -1;
+		}
 
-        int prefer_af = ipv6first ? AF_INET6 : AF_INET;
-        for (rp = result; rp != NULL; rp = rp->ai_next)
-            if (rp->ai_family == prefer_af) {
-                if (rp->ai_family == AF_INET)
-                    memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in));
-                else if (rp->ai_family == AF_INET6)
-                    memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in6));
-                break;
-            }
+		int prefer_af = ipv6first ? AF_INET6 : AF_INET;
+		for (rp = result; rp != NULL; rp = rp->ai_next)
+			if (rp->ai_family == prefer_af) {
+				if (rp->ai_family == AF_INET)
+					memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in));
+				else if (rp->ai_family == AF_INET6)
+					memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in6));
+				break;
+			}
 
-        if (rp == NULL) {
-            for (rp = result; rp != NULL; rp = rp->ai_next) {
-                if (rp->ai_family == AF_INET)
-                    memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in));
-                else if (rp->ai_family == AF_INET6)
-                    memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in6));
-                break;
-            }
-        }
+		if (rp == NULL) {
+			for (rp = result; rp != NULL; rp = rp->ai_next) {
+				if (rp->ai_family == AF_INET)
+					memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in));
+				else if (rp->ai_family == AF_INET6)
+					memcpy(storage, rp->ai_addr, sizeof(struct sockaddr_in6));
+				break;
+			}
+		}
 
-        if (rp == NULL) {
-            LOGE("failed to resolve remote addr");
-            return -1;
-        }
+		if (rp == NULL) {
+			LOGE("failed to resolve remote addr");
+			return -1;
+		}
 
-        freeaddrinfo(result);
-        return 0;
-    }
+		freeaddrinfo(result);
+		return 0;
+	}
 
-    return -1;
+	return -1;
 }
 
-int
-sockaddr_cmp(struct sockaddr_storage *addr1,
-             struct sockaddr_storage *addr2, socklen_t len)
+int sockaddr_cmp(struct sockaddr_storage *addr1, struct sockaddr_storage *addr2, socklen_t len)
 {
-    struct sockaddr_in *p1_in   = (struct sockaddr_in *)addr1;
-    struct sockaddr_in *p2_in   = (struct sockaddr_in *)addr2;
-    struct sockaddr_in6 *p1_in6 = (struct sockaddr_in6 *)addr1;
-    struct sockaddr_in6 *p2_in6 = (struct sockaddr_in6 *)addr2;
-    if (p1_in->sin_family < p2_in->sin_family)
-        return -1;
-    if (p1_in->sin_family > p2_in->sin_family)
-        return 1;
-    /* compare ip4 */
-    if (p1_in->sin_family == AF_INET) {
-        /* just order it, ntohs not required */
-        if (p1_in->sin_port < p2_in->sin_port)
-            return -1;
-        if (p1_in->sin_port > p2_in->sin_port)
-            return 1;
-        return memcmp(&p1_in->sin_addr, &p2_in->sin_addr, INET_SIZE);
-    } else if (p1_in6->sin6_family == AF_INET6) {
-        /* just order it, ntohs not required */
-        if (p1_in6->sin6_port < p2_in6->sin6_port)
-            return -1;
-        if (p1_in6->sin6_port > p2_in6->sin6_port)
-            return 1;
-        return memcmp(&p1_in6->sin6_addr, &p2_in6->sin6_addr,
-                      INET6_SIZE);
-    } else {
-        /* eek unknown type, perform this comparison for sanity. */
-        return memcmp(addr1, addr2, len);
-    }
+	struct sockaddr_in  *p1_in  = (struct sockaddr_in *) addr1;
+	struct sockaddr_in  *p2_in  = (struct sockaddr_in *) addr2;
+	struct sockaddr_in6 *p1_in6 = (struct sockaddr_in6 *) addr1;
+	struct sockaddr_in6 *p2_in6 = (struct sockaddr_in6 *) addr2;
+	if (p1_in->sin_family < p2_in->sin_family)
+		return -1;
+	if (p1_in->sin_family > p2_in->sin_family)
+		return 1;
+	/* compare ip4 */
+	if (p1_in->sin_family == AF_INET) {
+		/* just order it, ntohs not required */
+		if (p1_in->sin_port < p2_in->sin_port)
+			return -1;
+		if (p1_in->sin_port > p2_in->sin_port)
+			return 1;
+		return memcmp(&p1_in->sin_addr, &p2_in->sin_addr, INET_SIZE);
+	} else if (p1_in6->sin6_family == AF_INET6) {
+		/* just order it, ntohs not required */
+		if (p1_in6->sin6_port < p2_in6->sin6_port)
+			return -1;
+		if (p1_in6->sin6_port > p2_in6->sin6_port)
+			return 1;
+		return memcmp(&p1_in6->sin6_addr, &p2_in6->sin6_addr, INET6_SIZE);
+	} else {
+		/* eek unknown type, perform this comparison for sanity. */
+		return memcmp(addr1, addr2, len);
+	}
 }
 
-int
-sockaddr_cmp_addr(struct sockaddr_storage *addr1,
-                  struct sockaddr_storage *addr2, socklen_t len)
+int sockaddr_cmp_addr(struct sockaddr_storage *addr1, struct sockaddr_storage *addr2, socklen_t len)
 {
-    struct sockaddr_in *p1_in   = (struct sockaddr_in *)addr1;
-    struct sockaddr_in *p2_in   = (struct sockaddr_in *)addr2;
-    struct sockaddr_in6 *p1_in6 = (struct sockaddr_in6 *)addr1;
-    struct sockaddr_in6 *p2_in6 = (struct sockaddr_in6 *)addr2;
-    if (p1_in->sin_family < p2_in->sin_family)
-        return -1;
-    if (p1_in->sin_family > p2_in->sin_family)
-        return 1;
-    if (verbose) {
-        LOGI("sockaddr_cmp_addr: sin_family equal? %d", p1_in->sin_family == p2_in->sin_family);
-    }
-    /* compare ip4 */
-    if (p1_in->sin_family == AF_INET) {
-        return memcmp(&p1_in->sin_addr, &p2_in->sin_addr, INET_SIZE);
-    } else if (p1_in6->sin6_family == AF_INET6) {
-        return memcmp(&p1_in6->sin6_addr, &p2_in6->sin6_addr,
-                      INET6_SIZE);
-    } else {
-        /* eek unknown type, perform this comparison for sanity. */
-        return memcmp(addr1, addr2, len);
-    }
+	struct sockaddr_in  *p1_in  = (struct sockaddr_in *) addr1;
+	struct sockaddr_in  *p2_in  = (struct sockaddr_in *) addr2;
+	struct sockaddr_in6 *p1_in6 = (struct sockaddr_in6 *) addr1;
+	struct sockaddr_in6 *p2_in6 = (struct sockaddr_in6 *) addr2;
+	if (p1_in->sin_family < p2_in->sin_family)
+		return -1;
+	if (p1_in->sin_family > p2_in->sin_family)
+		return 1;
+	if (verbose) {
+		LOGI("sockaddr_cmp_addr: sin_family equal? %d", p1_in->sin_family == p2_in->sin_family);
+	}
+	/* compare ip4 */
+	if (p1_in->sin_family == AF_INET) {
+		return memcmp(&p1_in->sin_addr, &p2_in->sin_addr, INET_SIZE);
+	} else if (p1_in6->sin6_family == AF_INET6) {
+		return memcmp(&p1_in6->sin6_addr, &p2_in6->sin6_addr, INET6_SIZE);
+	} else {
+		/* eek unknown type, perform this comparison for sanity. */
+		return memcmp(addr1, addr2, len);
+	}
 }
 
-int
-validate_hostname(const char *hostname, const int hostname_len)
+int validate_hostname(const char *hostname, const int hostname_len)
 {
-    if (hostname == NULL)
-        return 0;
+	if (hostname == NULL)
+		return 0;
 
-    if (hostname_len < 1 || hostname_len > 255)
-        return 0;
+	if (hostname_len < 1 || hostname_len > 255)
+		return 0;
 
-    if (hostname[0] == '.')
-        return 0;
+	if (hostname[0] == '.')
+		return 0;
 
-    const char *label = hostname;
-    while (label < hostname + hostname_len) {
-        size_t label_len = hostname_len - (label - hostname);
-        char *next_dot   = strchr(label, '.');
-        if (next_dot != NULL)
-            label_len = next_dot - label;
+	const char *label = hostname;
+	while (label < hostname + hostname_len) {
+		size_t label_len = hostname_len - (label - hostname);
+		char  *next_dot  = strchr(label, '.');
+		if (next_dot != NULL)
+			label_len = next_dot - label;
 
-        if (label + label_len > hostname + hostname_len)
-            return 0;
+		if (label + label_len > hostname + hostname_len)
+			return 0;
 
-        if (label_len > 63 || label_len < 1)
-            return 0;
+		if (label_len > 63 || label_len < 1)
+			return 0;
 
-        if (label[0] == '-' || label[label_len - 1] == '-')
-            return 0;
+		if (label[0] == '-' || label[label_len - 1] == '-')
+			return 0;
 
-        if (strspn(label, valid_label_bytes) < label_len)
-            return 0;
+		if (strspn(label, valid_label_bytes) < label_len)
+			return 0;
 
-        label += label_len + 1;
-    }
+		label += label_len + 1;
+	}
 
-    return 1;
+	return 1;
 }
 
-int
-is_ipv6only(ss_addr_t *servers, size_t server_num, int ipv6first)
+int is_ipv6only(ss_addr_t *servers, size_t server_num, int ipv6first)
 {
-    int i;
-    for (i = 0; i < server_num; i++) {
-        struct sockaddr_storage storage;
-        memset(&storage, 0, sizeof(struct sockaddr_storage));
-        if (get_sockaddr(servers[i].host, servers[i].port, &storage, 1, ipv6first) == -1) {
-            FATAL("failed to resolve the provided hostname");
-        }
-        if (storage.ss_family != AF_INET6) {
-            return 0;
-        }
-    }
-    return 1;
+	int i;
+	for (i = 0; i < server_num; i++) {
+		struct sockaddr_storage storage;
+		memset(&storage, 0, sizeof(struct sockaddr_storage));
+		if (get_sockaddr(servers[i].host, servers[i].port, &storage, 1, ipv6first) == -1) {
+			FATAL("failed to resolve the provided hostname");
+		}
+		if (storage.ss_family != AF_INET6) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+void parse_addr(const char *str_in, ss_addr_t *addr)
+{
+	if (str_in == NULL)
+		return;
+
+	int   ipv6 = 0, ret = -1, n = 0, len;
+	char *pch;
+	char *str = strdup(str_in);
+	len       = strlen(str_in);
+
+	pch = strchr(str, ':');
+	while (pch != NULL) {
+		n++;
+		ret = pch - str;
+		pch = strchr(pch + 1, ':');
+	}
+
+	if (n > 1) {
+		ipv6 = 1;
+		if (str[ret - 1] != ']') {
+			ret = -1;
+		}
+	}
+
+	if (ret == -1) {
+		if (ipv6) {
+			addr->host = ss_strndup(str + 1, strlen(str) - 2);
+		} else {
+			addr->host = strdup(str);
+		}
+		addr->port = NULL;
+	} else {
+		if (ipv6) {
+			addr->host = ss_strndup(str + 1, ret - 2);
+		} else {
+			addr->host = ss_strndup(str, ret);
+		}
+		if (ret < len - 1) {
+			addr->port = strdup(str + ret + 1);
+		} else {
+			addr->port = NULL;
+		}
+	}
+
+	free(str);
 }

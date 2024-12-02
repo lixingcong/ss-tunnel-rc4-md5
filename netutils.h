@@ -60,6 +60,10 @@ typedef struct {
     char *port;
 } ss_addr_t;
 
+#define TCP_ONLY     0
+#define TCP_AND_UDP  1
+#define UDP_ONLY     3
+
 // Be compatible with older libc.
 #ifndef IPPROTO_MPTCP
 #define IPPROTO_MPTCP 262
@@ -123,5 +127,7 @@ int sockaddr_cmp_addr(struct sockaddr_storage *addr1,
 int validate_hostname(const char *hostname, const int hostname_len);
 
 int is_ipv6only(ss_addr_t *servers, size_t server_num, int ipv6first);
+
+void parse_addr(const char *str_in, ss_addr_t *addr);
 
 #endif
