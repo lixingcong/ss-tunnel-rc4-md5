@@ -879,6 +879,7 @@ int main(int argc, char **argv)
 	char *local_addr = NULL;
 	char *password   = NULL;
 	char *timeout    = NULL;
+	char *timeout_udp = NULL;
 	char *pid_path   = NULL;
 	char *conf_path  = NULL;
 	char *iface      = NULL;
@@ -1053,6 +1054,9 @@ int main(int argc, char **argv)
 		if (timeout == NULL) {
 			timeout = conf->timeout;
 		}
+		if (timeout_udp == NULL) {
+			timeout_udp = conf->timeout_udp;
+		}
 		if (user == NULL) {
 			user = conf->user;
 		}
@@ -1139,6 +1143,10 @@ int main(int argc, char **argv)
 
 	if (timeout == NULL) {
 		timeout = "60";
+	}
+
+	if (timeout_udp == NULL) {
+		timeout_udp = timeout;
 	}
 
 #ifdef HAVE_SETRLIMIT
@@ -1283,11 +1291,12 @@ int main(int argc, char **argv)
 
 		ev_io_init(&listen_ctx.io, accept_cb, listenfd, EV_READ);
 		ev_io_start(loop, &listen_ctx.io);
+
+		LOGI("TCP relay enabled, timeout=%d", listen_ctx.timeout);
 	}
 
 	// Setup UDP
 	if (mode != TCP_ONLY) {
-		LOGI("UDP relay enabled");
 		char                    *host    = remote_addr[0].host;
 		char                    *port    = remote_addr[0].port == NULL ? remote_port : remote_addr[0].port;
 		struct sockaddr_storage *storage = ss_malloc(sizeof(struct sockaddr_storage));
@@ -1296,7 +1305,8 @@ int main(int argc, char **argv)
 			FATAL("failed to resolve the provided hostname");
 		}
 		struct sockaddr *addr = (struct sockaddr *) storage;
-		init_udprelay(local_addr, local_port, addr, get_sockaddr_len(addr), tunnel_addr, mtu, crypto, listen_ctx.timeout, iface);
+		init_udprelay(local_addr, local_port, addr, get_sockaddr_len(addr), tunnel_addr, mtu, crypto, atoi(timeout_udp), iface);
+		LOGI("UDP relay enabled, timeout=%s", timeout_udp);
 	}
 
 	if (mode == UDP_ONLY) {
