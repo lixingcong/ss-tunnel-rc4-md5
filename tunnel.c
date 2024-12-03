@@ -58,6 +58,7 @@
 #include "crypto.h"
 #include "tunnel.h"
 #include "cork2.h"
+#include "jconf.h"
 #include <string.h>
 #ifdef WIN32
 #include "winsock.h"
@@ -879,6 +880,7 @@ int main(int argc, char **argv)
 	char *password   = NULL;
 	char *timeout    = NULL;
 	char *pid_path   = NULL;
+	char *conf_path  = NULL;
 	char *iface      = NULL;
 
 	ss_addr_t tunnel_addr     = {.host = NULL, .port = NULL};
@@ -966,6 +968,9 @@ int main(int argc, char **argv)
 		case 't':
 			timeout = optarg;
 			break;
+		case 'c':
+			conf_path = optarg;
+			break;
 		case 'i':
 			iface = optarg;
 			break;
@@ -1018,6 +1023,77 @@ int main(int argc, char **argv)
 	if (opterr) {
 		usage();
 		exit(EXIT_FAILURE);
+	}
+
+	if (argc == 1) {
+		if (conf_path == NULL) {
+			conf_path = get_default_conf();
+		}
+	}
+
+	if (conf_path != NULL) {
+		jconf_t *conf = read_jconf(conf_path);
+		if (remote_num == 0) {
+			remote_num = conf->remote_num;
+			for (i = 0; i < remote_num; i++)
+				remote_addr[i] = conf->remote_addr[i];
+		}
+		if (remote_port == NULL) {
+			remote_port = conf->remote_port;
+		}
+		if (local_addr == NULL) {
+			local_addr = conf->local_addr;
+		}
+		if (local_port == NULL) {
+			local_port = conf->local_port;
+		}
+		if (password == NULL) {
+			password = conf->password;
+		}
+		if (timeout == NULL) {
+			timeout = conf->timeout;
+		}
+		if (user == NULL) {
+			user = conf->user;
+		}
+		if (tunnel_addr_str == NULL) {
+			tunnel_addr_str = conf->tunnel_address;
+		}
+		if (mode == TCP_ONLY) {
+			mode = conf->mode;
+		}
+		if (mtu == 0) {
+			mtu = conf->mtu;
+		}
+		if (mptcp == 0) {
+			mptcp = conf->mptcp;
+		}
+		if (no_delay == 0) {
+			no_delay = conf->no_delay;
+		}
+		if (reuse_port == 0) {
+			reuse_port = conf->reuse_port;
+		}
+		if (tcp_incoming_sndbuf == 0) {
+			tcp_incoming_sndbuf = conf->tcp_incoming_sndbuf;
+		}
+		if (tcp_incoming_rcvbuf == 0) {
+			tcp_incoming_rcvbuf = conf->tcp_incoming_rcvbuf;
+		}
+		if (tcp_outgoing_sndbuf == 0) {
+			tcp_outgoing_sndbuf = conf->tcp_outgoing_sndbuf;
+		}
+		if (tcp_outgoing_rcvbuf == 0) {
+			tcp_outgoing_rcvbuf = conf->tcp_outgoing_rcvbuf;
+		}
+		if (fast_open == 0) {
+			fast_open = conf->fast_open;
+		}
+#ifdef HAVE_SETRLIMIT
+		if (nofile == 0) {
+			nofile = conf->nofile;
+		}
+#endif
 	}
 
 	if (remote_num == 0 || remote_port == NULL || tunnel_addr_str == NULL || local_port == NULL || password == NULL) {
