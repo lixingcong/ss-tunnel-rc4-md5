@@ -128,6 +128,4 @@ int validate_hostname(const char *hostname, const int hostname_len);
 
 int is_ipv6only(ss_addr_t *servers, size_t server_num, int ipv6first);
 
-void parse_addr(const char *str_in, ss_addr_t *addr);
-
 #endif
