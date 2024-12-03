@@ -12,8 +12,11 @@ add_executable(${DEMO_NAME}
     cork2.c
     crypto.c
     crypto-xor.c
+    jconf.c
+    json.c
 )
 
 target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)
 
 target_link_libraries(${DEMO_NAME} PRIVATE ev)
+target_link_libraries(${DEMO_NAME} PRIVATE m)
