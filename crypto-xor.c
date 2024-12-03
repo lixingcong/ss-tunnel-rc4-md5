@@ -33,20 +33,26 @@
 /* An arbitrary initial parameter */
 #define JHASH_INITVAL 0xdeadbeef
 
-static inline void xor_impl(const void* in, void* out, size_t dataLen, const uint8_t* key, size_t keyLen)
+static inline void xor_impl(const void* in, void* out, size_t dataLen, const uint8_t* key, size_t keyIdxOffset, size_t keyLen)
 {
-	size_t               i    = 0;
 	const unsigned char* pIn  = in;
 	unsigned char*       pOut = out;
-	for (; i < dataLen; ++i)
-		*(pOut++) = *(pIn++) ^ key[i % keyLen];
+
+	while(dataLen--){
+#if 1
+		*(pOut++) = *(pIn++) ^ key[keyIdxOffset % keyLen];
+#else
+		*(pOut++) = *(pIn++); // copy same content, for debug perpose
+#endif
+		++keyIdxOffset;
+	}
 }
 
-static inline void xor_cipher_impl(const void* in, void* out, size_t dataLen, const cipher_ctx_t* ctx)
+static inline void xor_cipher_impl(const void* in, void* out, size_t dataLen,  size_t keyIdxOffset, const cipher_ctx_t* ctx)
 {
 	const cipher_t* cipher = ctx->cipher;
-	xor_impl(in, out, dataLen, cipher->key, cipher->key_len);
-	xor_impl(out, out, dataLen, ctx->nonce, cipher->nonce_len);
+	xor_impl(in, out, dataLen, cipher->key, keyIdxOffset, cipher->key_len);
+	xor_impl(out, out, dataLen, ctx->nonce, keyIdxOffset, cipher->nonce_len);
 }
 
 void xor_ctx_release(cipher_ctx_t *cipher_ctx)
@@ -73,7 +79,7 @@ int xor_encrypt_all(buffer_t *plaintext, cipher_t *cipher, size_t capacity)
 	ciphertext->len      = nonce_len + data_len;
 
 	memcpy(ciphertext->data, cipher_ctx.nonce, nonce_len);
-	xor_cipher_impl(plaintext->data, ciphertext->data + nonce_len, data_len, &cipher_ctx);
+	xor_cipher_impl(plaintext->data, ciphertext->data + nonce_len, data_len, 0, &cipher_ctx);
 	xor_ctx_release(&cipher_ctx);
 
 	brealloc(plaintext, ciphertext->len, capacity);
@@ -98,15 +104,19 @@ int xor_encrypt(buffer_t *plaintext, cipher_ctx_t *cipher_ctx, size_t capacity)
 	const size_t data_len   = plaintext->len;
 	brealloc(&tmp, nonce_len + data_len, capacity);
 	buffer_t*    ciphertext = &tmp;
-	ciphertext->len         = nonce_len + data_len;
+	ciphertext->len         = 0;
 
 	if (!cipher_ctx->init) {
 		memcpy(ciphertext->data, cipher_ctx->nonce, nonce_len);
+		ciphertext->len += nonce_len;
 		cipher_ctx->init    = 1;
+		cipher_ctx->counter = 0;
 	}
 
-	xor_cipher_impl(plaintext->data, ciphertext->data + nonce_len, data_len, cipher_ctx);
+	xor_cipher_impl(plaintext->data, ciphertext->data + ciphertext->len, data_len, cipher_ctx->counter, cipher_ctx);
+	cipher_ctx->counter += data_len;
 
+	ciphertext->len += data_len;
 	brealloc(plaintext, ciphertext->len, capacity);
 	memcpy(plaintext->data, ciphertext->data, ciphertext->len);
 	plaintext->len = ciphertext->len;
@@ -130,7 +140,7 @@ int xor_decrypt_all(buffer_t *ciphertext, cipher_t *cipher, size_t capacity)
 	buffer_t *plaintext = &tmp;
 	plaintext->len = ciphertext->len - nonce_len;
 
-	xor_cipher_impl(ciphertext->data + nonce_len, plaintext->data, plaintext->len, &cipher_ctx);
+	xor_cipher_impl(ciphertext->data + nonce_len, plaintext->data, plaintext->len, 0, &cipher_ctx);
 	xor_ctx_release(&cipher_ctx);
 
 	brealloc(ciphertext, plaintext->len, capacity);
@@ -173,13 +183,15 @@ int xor_decrypt(buffer_t *ciphertext, cipher_ctx_t *cipher_ctx, size_t capacity)
 		plaintext->len -= left_len;
 
 		memcpy(cipher_ctx->nonce, cipher_ctx->chunk->data, cipher->nonce_len);
-		cipher_ctx->init = 1;
+		cipher_ctx->init    = 1;
+		cipher_ctx->counter = 0;
 	}
 
 	if (ciphertext->len <= 0)
 		return CRYPTO_NEED_MORE;
 
-	xor_cipher_impl(ciphertext->data, plaintext->data, ciphertext->len, cipher_ctx);
+	xor_cipher_impl(ciphertext->data, plaintext->data, ciphertext->len, cipher_ctx->counter, cipher_ctx);
+	cipher_ctx->counter += ciphertext->len;
 
 	brealloc(ciphertext, plaintext->len, capacity);
 	memcpy(ciphertext->data, plaintext->data, plaintext->len);

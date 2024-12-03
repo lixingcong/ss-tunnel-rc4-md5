@@ -60,6 +60,7 @@ typedef struct {
 
 typedef struct {
     uint32_t init;
+	uint64_t counter;
     cipher_t *cipher;
     buffer_t *chunk;
     uint8_t nonce[MAX_NONCE_LENGTH];
