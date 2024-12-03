@@ -1338,8 +1338,12 @@ int main(int argc, char **argv)
 	winsock_cleanup();
 #endif
 
-	if (crypto)
+	if (crypto) {
+		ss_free(crypto->cipher);
 		ss_free(crypto);
+	}
+
+	LOGI("gracefully closed");
 
 	return ret_val;
 }
