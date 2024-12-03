@@ -51,6 +51,7 @@
 #include "udprelay.h"
 #include "cork2.h"
 #include "crypto.h"
+#include "jconf.h"
 
 #ifdef MODULE_REMOTE
 #define MAX_UDP_CONN_NUM 512

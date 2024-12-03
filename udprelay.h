@@ -35,8 +35,9 @@
 #include "resolv.h"
 #endif
 
+#include "cache.h"
+
 #include "common.h"
-#include "crypto.h"
 
 #define MAX_UDP_PACKET_SIZE (65507)
 

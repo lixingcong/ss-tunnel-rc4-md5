@@ -60,10 +60,6 @@ typedef struct {
     char *port;
 } ss_addr_t;
 
-#define TCP_ONLY     0
-#define TCP_AND_UDP  1
-#define UDP_ONLY     3
-
 // Be compatible with older libc.
 #ifndef IPPROTO_MPTCP
 #define IPPROTO_MPTCP 262

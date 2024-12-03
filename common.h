@@ -78,10 +78,6 @@ enum {
     GETOPT_VAL_NFTABLES_SETS
 };
 
-#define MAX_CONNECT_TIMEOUT 10
-#define MIN_UDP_TIMEOUT 10
-#define MAX_REMOTE_NUM 10
-
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 
