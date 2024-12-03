@@ -1338,5 +1338,8 @@ int main(int argc, char **argv)
 	winsock_cleanup();
 #endif
 
+	if (crypto)
+		ss_free(crypto);
+
 	return ret_val;
 }

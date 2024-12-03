@@ -1,22 +1,28 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(DEMO_NAME ss-tunnel-xor)
-project(${DEMO_NAME} LANGUAGES C)
+set(BIN_TUNNEL ss-tunnel-xor)
+project(${BIN_TUNNEL} LANGUAGES C)
 
-add_executable(${DEMO_NAME}
-    tunnel.c
-    utils.c
-    netutils.c
-    udprelay.c
-    cache.c
-    cork2.c
-    crypto.c
-    crypto-xor.c
-    jconf.c
-    json.c
-)
+aux_source_directory(. TUNNEL_SRC)
+add_executable(${BIN_TUNNEL} ${TUNNEL_SRC})
 
-target_compile_definitions(${DEMO_NAME} PUBLIC MODULE_TUNNEL)
+target_compile_definitions(${BIN_TUNNEL} PUBLIC MODULE_TUNNEL)
 
-target_link_libraries(${DEMO_NAME} PRIVATE ev)
-target_link_libraries(${DEMO_NAME} PRIVATE m)
+target_link_libraries(${BIN_TUNNEL} PRIVATE ev)
+target_link_libraries(${BIN_TUNNEL} PRIVATE m)
+
+
+set(BUILD_TEST_CASE OFF CACHE BOOL "Build test cases")
+if(BUILD_TEST_CASE)
+    set(BIN_TEST_CASE test_case)
+
+    add_executable(${BIN_TEST_CASE}
+        test/test_xor.c test/tap.c test/tap.h
+        utils.c
+        cork2.c
+        crypto.c
+        crypto-xor.c
+    )
+endif()
+
+
