@@ -877,12 +877,9 @@ int main(int argc, char **argv)
 	char *local_port = NULL;
 	char *local_addr = NULL;
 	char *password   = NULL;
-	char *key        = NULL;
 	char *timeout    = NULL;
-	char *method     = NULL;
 	char *pid_path   = NULL;
 	char *iface      = NULL;
-	char  tmp_port[8];
 
 	ss_addr_t tunnel_addr     = {.host = NULL, .port = NULL};
 	char     *tunnel_addr_str = NULL;
@@ -903,7 +900,6 @@ int main(int argc, char **argv)
 	                                       {"tcp-outgoing-sndbuf", required_argument, NULL, GETOPT_VAL_TCP_OUTGOING_SNDBUF},
 	                                       {"tcp-outgoing-rcvbuf", required_argument, NULL, GETOPT_VAL_TCP_OUTGOING_RCVBUF},
 	                                       {"password", required_argument, NULL, GETOPT_VAL_PASSWORD},
-	                                       {"key", required_argument, NULL, GETOPT_VAL_KEY},
 	                                       {"help", no_argument, NULL, GETOPT_VAL_HELP},
 	                                       {NULL, 0, NULL, 0}};
 
@@ -932,9 +928,6 @@ int main(int argc, char **argv)
 		case GETOPT_VAL_NODELAY:
 			no_delay = 1;
 			LOGI("enable TCP no-delay");
-			break;
-		case GETOPT_VAL_KEY:
-			key = optarg;
 			break;
 		case GETOPT_VAL_REUSE_PORT:
 			reuse_port = 1;
@@ -972,9 +965,6 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			timeout = optarg;
-			break;
-		case 'm':
-			method = optarg;
 			break;
 		case 'i':
 			iface = optarg;
@@ -1030,7 +1020,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (remote_num == 0 || remote_port == NULL || tunnel_addr_str == NULL || local_port == NULL || (password == NULL && key == NULL)) {
+	if (remote_num == 0 || remote_port == NULL || tunnel_addr_str == NULL || local_port == NULL || password == NULL) {
 		usage();
 		exit(EXIT_FAILURE);
 	}
@@ -1069,10 +1059,6 @@ int main(int argc, char **argv)
 
 	if (tcp_outgoing_rcvbuf != 0) {
 		LOGI("set TCP outgoing connection receive buffer size to %d", tcp_outgoing_rcvbuf);
-	}
-
-	if (method == NULL) {
-		method = "chacha20-ietf-poly1305";
 	}
 
 	if (timeout == NULL) {
@@ -1175,8 +1161,8 @@ int main(int argc, char **argv)
 #endif
 
 	// Setup keys
-	LOGI("initializing ciphers... %s", method);
-	crypto = crypto_init(password, key, method);
+	LOGI("initializing ciphers...");
+	crypto = crypto_init(password, NULL, NULL);
 	if (crypto == NULL)
 		FATAL("failed to initialize ciphers");
 

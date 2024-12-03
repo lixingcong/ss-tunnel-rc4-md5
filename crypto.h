@@ -85,6 +85,4 @@ int rand_bytes(void *, int);
 
 crypto_t *crypto_init(const char *, const char *, const char *);
 
-extern struct cache *nonce_cache;
-
 #endif // _CRYPTO_H
