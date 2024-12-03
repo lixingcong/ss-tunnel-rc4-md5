@@ -1,0 +1,11 @@
+{
+	"server": "127.0.0.1",
+	"server_port": 9999,
+	"local_address": "127.0.0.1",
+	"local_port": 8888,
+	"timeout": 30,
+	"timeout_udp": 11,
+	"password": "12345678",
+	"mode": "tcp_and_udp",
+	"tunnel_address": "8.8.8.8:53" 
+}
