@@ -21,7 +21,6 @@ if(BUILD_TEST_CASE)
         utils.c
         cork2.c
         crypto.c
-        crypto-xor.c
     )
 endif()
 

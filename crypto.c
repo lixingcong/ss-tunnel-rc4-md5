@@ -34,7 +34,6 @@
 #include <stdint.h>
 // #include "base64.h"
 #include "crypto.h"
-#include "crypto-xor.h"
 // #include "stream.h"
 // #include "aead.h"
 #include "utils.h"
@@ -119,6 +118,7 @@ crypto_init(const char *password, const char *key, const char *method)
 {
     entropy_check();
 
+#ifdef XXXX // 2024年12月04日 14:32:06
 	cipher_t *cipher = xor_init(password, NULL, method);
 	crypto_t *crypto = (crypto_t *)ss_malloc(sizeof(crypto_t));
 	crypto_t tmp     = {
@@ -133,6 +133,9 @@ crypto_init(const char *password, const char *key, const char *method)
 	memcpy(crypto, &tmp, sizeof(crypto_t));
 
 	return crypto;
+#else
+	return NULL;
+#endif
 }
 
 
