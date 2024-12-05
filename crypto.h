@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include "rc4.h"
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -53,17 +54,17 @@ typedef struct buffer {
 } buffer_t;
 
 typedef struct {
-    size_t nonce_len;
+	size_t nonce_len;
     size_t key_len;
     uint8_t key[MAX_KEY_LENGTH];
 } cipher_t;
 
 typedef struct {
-    uint32_t init;
-	uint64_t counter;
+	uint32_t  init;
     cipher_t *cipher;
-    buffer_t *chunk;
-    uint8_t nonce[MAX_NONCE_LENGTH];
+	buffer_t *chunk;
+	uint8_t   nonce[MAX_NONCE_LENGTH];
+	rc4_ctx   rc4;
 } cipher_ctx_t;
 
 typedef struct {

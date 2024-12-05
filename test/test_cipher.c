@@ -5,7 +5,7 @@
 #define LEN_LONG 2048
 #define LEN_SHORT 100
 
-int main()
+void testCrypoRc4Md5()
 {
 	// init plainText
 	char PLAINTEXT_LONG[LEN_LONG];
@@ -18,12 +18,10 @@ int main()
 	for (i = 0; i < LEN_SHORT; ++i)
 		PLAINTEXT_SHORT[i] = '0' + (i % 10);
 
-	plan(NO_PLAN);
-
 	crypto_t* c = crypto_init("password", NULL, NULL);
 	ok(c, "init crypto");
 
-	{
+	if(1){
 		printf("test udp: encrypt/decrypt all\n");
 		const char* str[2] = {PLAINTEXT_LONG, PLAINTEXT_SHORT};
 		const int   len[2] = {LEN_LONG, LEN_SHORT};
@@ -48,7 +46,7 @@ int main()
 		bfree(&buf);
 	}
 
-	{
+	if(1){
 		printf("test tcp: one shot\n");
 		const char* str[2] = {PLAINTEXT_LONG, PLAINTEXT_SHORT};
 		const int   len[2] = {LEN_LONG, LEN_SHORT};
@@ -80,7 +78,7 @@ int main()
 		bfree(&buf);
 	}
 
-	{
+	if(1){
 		// test tcp: many shots(chunks)
 #define CHUNK_LENGTH_CASE 6
 		const int   ChunkLengthArr[CHUNK_LENGTH_CASE] = {1, 2, 3, 4, 9, 65};
@@ -186,6 +184,4 @@ int main()
 		free(c->cipher);
 		free(c);
 	}
-
-	return 0;
 }

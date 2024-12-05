@@ -17,10 +17,18 @@ if(BUILD_TEST_CASE)
     set(BIN_TEST_CASE test_case)
 
     add_executable(${BIN_TEST_CASE}
-        test/test_xor.c test/tap.c test/tap.h
+        test/main.c
+        test/test_rc4.c
+        test/test_cipher.c
+        test/test_crypto_utils.c
+        test/tap.c test/tap.h
         utils.c
         cork2.c
         crypto.c
+        crypto-rc4-md5.c
+        crypto_utils.c
+        rc4.c
+        md5.c
     )
 endif()
 
