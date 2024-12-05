@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(BIN_TUNNEL ss-tunnel-xor)
+set(BIN_TUNNEL ss-tunnel-rc4-md5)
 project(${BIN_TUNNEL} LANGUAGES C)
 
 aux_source_directory(. TUNNEL_SRC)
