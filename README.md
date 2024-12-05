@@ -7,3 +7,4 @@
 
 - [md5-c](https://github.com/Zunawe/md5-c)
 - [rc4](https://github.com/ogay/rc4)
+- [libtap](https://github.com/zorgnax/libtap)

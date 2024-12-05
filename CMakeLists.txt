@@ -21,6 +21,7 @@ if(BUILD_TEST_CASE)
         test/test_rc4.c
         test/test_cipher.c
         test/test_crypto_utils.c
+        test/test_md5.c
         test/tap.c test/tap.h
         utils.c
         cork2.c
